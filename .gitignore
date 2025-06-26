@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Env files
+.env
+client/.env
+server/.env
+
+# Log files
+*.log
+
+# Build output
+client/build
+dist
+
+# OS/System files
+.DS_Store
+Thumbs.db
+
+server/google-credentials.json
+
+.env
+*.json
