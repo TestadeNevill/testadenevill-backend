@@ -22,4 +22,4 @@ Thumbs.db
 server/google-credentials.json
 
 .env
-*.json
+google-credentials.json
