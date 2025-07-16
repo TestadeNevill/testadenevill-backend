@@ -21,7 +21,7 @@ const SHEET_ID = process.env.SHEET_ID; // Add this to your .env
 app.use(cors());
 app.use(express.json());
 
-app.post("/send","/contact", async (req, res) => {
+app.post("/send", async (req, res) => {
   const { name, email, message, honeypot } = req.body;
 
 if (honeypot && honeypot.trim() !== "") {
