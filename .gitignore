@@ -19,7 +19,7 @@ dist
 .DS_Store
 Thumbs.db
 
-server/google-credentials.json
+
 
 .env
 google-credentials.json
