@@ -5,7 +5,7 @@ const router = express.Router();
 const DEFAULT_LAT = 34.0522;
 const DEFAULT_LNG = -118.2437;
 
-router.get("/live-dashboard", async (req, res) => {
+router.get("https://testadenevill.com/live-dashboard", async (req, res) => {
   const lat = req.query.lat || DEFAULT_LAT;
   const lng = req.query.lng || DEFAULT_LNG;
 
