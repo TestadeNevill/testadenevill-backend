@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-900 px-6 py-10">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-4xl font-bold text-green-700 mb-8">
+      Live Dashboard – <%= city %>
+    </h1>
+
+    <!-- Weather -->
+    <div class="bg-blue-100 border border-blue-300 p-4 rounded mb-8 shadow">
+      <h2 class="text-2xl font-semibold mb-2">Weather Now</h2>
+      <p class="text-lg">
+        🌡 <%= weather.main.temp %>°F – <%= weather.weather[0].description %>
+      </p>
+
+      <h3 class="mt-4 font-semibold">5-Day Forecast</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+        <% forecast.forEach(day => { %>
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4 shadow-sm text-center">
+            <h4 class="font-semibold text-green-700 mb-1"><%= day.day %></h4>
+            <p class="text-lg font-bold"><%= day.temp %>°F</p>
+            <p class="text-sm capitalize text-gray-700"><%= day.description %></p>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- AQI -->
+    <div class="bg-yellow-100 border border-yellow-300 p-4 rounded shadow mb-8">
+      <h2 class="text-2xl font-semibold mb-2">Air Quality Index (AQI)</h2>
+      <% if (aqi && typeof aqi.aqi === "number") { %>
+        <p class="text-lg">
+          AQI: <%= aqi.aqi %> – <%= aqi.dominentpol?.toUpperCase() %>
+        </p>
+      <% } else { %>
+        <p class="text-red-700">Air quality data is currently unavailable.</p>
+      <% } %>
+    </div>
+
+    <!-- Google Map -->
+    <h2 class="text-2xl font-semibold my-6">Nearby Places</h2>
+    <div id="map" class="w-full h-[500px] border border-gray-300 rounded shadow"></div>
+  </div>
+
+  <!-- Google Maps and Markers -->
+<script>
+  let map;
+  let markers = [];
+  let infoWindow;
+
+  function initMap() {
+    const center = {
+      lat: Number("<%= lat %>"),
+      lng: Number("<%= lng %>")
+    };
+
+
+    map = new google.maps.Map(document.getElementById("map"), {
+      zoom: 13,
+      center,
+    });
+
+    infoWindow = new google.maps.InfoWindow();
+
+    // Initial load
+    searchNearby(center);
+
+    // Reload on drag end
+    map.addListener("dragend", () => {
+      const newCenter = map.getCenter();
+      searchNearby({ lat: newCenter.lat(), lng: newCenter.lng() });
+    });
+  }
+
+  function clearMarkers() {
+    markers.forEach(marker => marker.setMap(null));
+    markers = [];
+  }
+
+  function searchNearby(location) {
+    clearMarkers();
+
+    const service = new google.maps.places.PlacesService(map);
+    const types = ["electric_vehicle_charging_station", "restaurant", "hotel", "tourist_attraction"];
+
+    types.forEach(type => {
+      service.nearbySearch({
+        location,
+        radius: 3000,
+        type,
+      }, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          results.forEach(place => {
+            const marker = new google.maps.Marker({
+              map,
+              position: place.geometry.location,
+              title: place.name,
+            });
+
+marker.addListener("click", () => {
+  const service = new google.maps.places.PlacesService(map);
+
+  service.getDetails({ placeId: place.place_id }, (details, status) => {
+    if (status === google.maps.places.PlacesServiceStatus.OK) {
+      const photoUrl = details.photos?.[0]?.getUrl({ maxWidth: 200 }) || "";
+      const stars = details.rating ? `⭐️ ${details.rating} (${details.user_ratings_total})` : "No rating";
+      const price = details.price_level ? "$".repeat(details.price_level) : "N/A";
+      const phone = details.formatted_phone_number || "N/A";
+
+      const html = `
+        <div class="text-sm max-w-xs">
+          <strong class="text-md">${details.name}</strong><br/>
+          <img src="${photoUrl}" alt="${details.name}" class="w-full h-32 object-cover rounded my-2"/>
+          <p><strong>Rating:</strong> ${stars}</p>
+          <p><strong>Price:</strong> ${price}</p>
+          <p><strong>Address:</strong> ${details.formatted_address || details.vicinity}</p>
+          <p><strong>Phone:</strong> ${phone}</p>
+        </div>
+      `;
+
+      infoWindow.setContent(html);
+      infoWindow.open(map, marker);
+    }
+  });
+});
+
+
+            markers.push(marker);
+          });
+        }
+      });
+    });
+  }
+</script>
+
+
+  <!-- Load Google Maps API -->
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=<%= googleKey %>&libraries=places&callback=initMap">
+  </script>
+
+  <!-- User Location + Auto Redirect -->
+  <script>
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const currentUrl = new URL(window.location.href);
+          const hasLatLng = currentUrl.searchParams.get("lat");
+
+          if (!hasLatLng) {
+            window.location.href = `/live-dashboard?lat=${lat}&lng=${lng}`;
+          }
+        },
+        error => {
+          console.warn("Geolocation denied or failed:", error.message);
+        }
+      );
+    } else {
+      console.warn("Geolocation not supported.");
+    }
+  </script>
+</body>
+</html>
