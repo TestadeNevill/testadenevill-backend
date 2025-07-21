@@ -60,10 +60,11 @@ res.render("live-dashboard", {
   googleKey: process.env.GOOGLE_MAPS_KEY
 });
 
-  } catch (err) {
-    console.error("Live Dashboard Error:", err.message);
-    res.status(500).send("Error loading dashboard");
-  }
+} catch (err) {
+  console.error('Live Dashboard Error:', err);
+  res.status(500).send('Error loading dashboard');
+}
+
 });
 
 
