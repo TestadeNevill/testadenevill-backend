@@ -10,6 +10,8 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 
 const { google } = require("googleapis");
 
@@ -79,7 +81,6 @@ fs.appendFile(logFilePath, logEntry, (err) => {
 });
 
 const liveDashboard = require("./routes/liveDashboard");
-app.use("/", liveDashboard);
+app.use("/api", liveDashboard);
 
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
