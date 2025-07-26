@@ -10,23 +10,44 @@ router.get("/live-dashboard", async (req, res) => {
     const weatherRes = await axios.get(`https://api.openweathermap.org/data/2.5/forecast`, {
       params: {
         lat, lon: lng,
-        appid: process.env.WEATHER_API_KEY,
+        appid: process.env.REACT_APP_WEATHER_API_KEY,
         units: 'imperial',
       },
     });
 
     const fullWeatherList = weatherRes.data.list;
     const currentWeather = fullWeatherList[0];
-    const noonForecast = fullWeatherList
-      .filter(item => item.dt_txt.includes("12:00:00"))
-      .slice(0, 5)
-      .map(item => ({
-        day: new Date(item.dt_txt).toLocaleDateString("en-US", { weekday: "long" }),
-        temp: Math.round(item.main.temp),
-        description: item.weather[0].description,
-      }));
+// Group forecasts by day and find daily high temps + an icon
+const dailyForecastMap = {};
 
-    const aqiRes = await axios.get(`https://api.waqi.info/feed/here/?token=${process.env.AQI_API_KEY}`);
+for (const item of fullWeatherList) {
+  const date = new Date(item.dt_txt).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+
+  if (!dailyForecastMap[date]) {
+    dailyForecastMap[date] = {
+      day: date,
+      temp: item.main.temp_max,
+      icon: item.weather[0].icon,
+      description: item.weather[0].description,
+    };
+  } else {
+    if (item.main.temp_max > dailyForecastMap[date].temp) {
+      dailyForecastMap[date].temp = item.main.temp_max;
+      dailyForecastMap[date].icon = item.weather[0].icon;
+      dailyForecastMap[date].description = item.weather[0].description;
+    }
+  }
+}
+
+const noonForecast = Object.values(dailyForecastMap).slice(0, 5).map(item => ({
+  day: item.day,
+  temp: Math.round(item.temp),
+  description: item.description,
+  icon: `https://openweathermap.org/img/wn/${item.icon}@2x.png`
+}));
+
+
+    const aqiRes = await axios.get(`https://api.waqi.info/feed/here/?token=${process.env.REACT_APP_AQI_API_KEY}`);
     const aqiData = aqiRes.data.status === "ok" ? aqiRes.data.data : null;
 
     const geoRes = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, {
@@ -46,10 +67,10 @@ router.get("/live-dashboard", async (req, res) => {
       googleKey: process.env.GOOGLE_MAPS_KEY
     });
 
-  } catch (err) {
-    console.error("Live Dashboard Error:", err);
-    res.status(500).send("Error loading dashboard");
-  }
+} catch (err) {
+  res.status(500).json({ error: "Error loading dashboard" });
+}
+
 });
 
 module.exports = router;
