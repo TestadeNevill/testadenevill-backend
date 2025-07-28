@@ -72,5 +72,7 @@ const noonForecast = Object.values(dailyForecastMap).slice(0, 5).map(item => ({
 }
 
 });
+console.log("Weather API Key:", process.env.REACT_APP_WEATHER_API_KEY);
+
 
 module.exports = router;
